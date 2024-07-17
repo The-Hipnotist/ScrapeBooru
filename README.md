@@ -6,7 +6,6 @@ ScrapeBooru is a GUI program that gets images from Gelbooru (with possible other
 - [ ] Make the max_resolution input a power of two.
 - [ ] Fix 'post' JSON bug, or suppress it.
 - [ ] Adjust layout or add stuff in general.
-- [ ] Add Danbooru, or any other booru site.
 
 ## Args:
 

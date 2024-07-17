@@ -4,9 +4,11 @@ ScrapeBooru is a GUI program that gets images from Gelbooru (with possible other
 
 ## Checklist:
 - [ ] Fix 'post' JSON bug, or suppress it.
-- [ ] Adjust layout or add stuff in general.
+- [x] Adjust layout or add stuff in general.
 
 ## Args:
+
+**Now contains an advanced options checkbox for more options.**
 
 Tags: Enter (or paste) the tags you want in here, seperated by a space per tag, a "-" to exclude one, and an "_" per word.
 

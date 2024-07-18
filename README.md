@@ -14,7 +14,7 @@ Tags: Enter (or paste) the tags you want in here, seperated by a space per tag, 
 
 An example would be `kanna_kamui  kobayashi-san_chi_no_maidragon 1girl -skateboard -1boy -half-life_(series) -2boys -tohru_(maidragon) -greyscale -thick_outlines -english_text -painting_(medium) -multiple_views -rating:sensitive -official_art  -from_above -animated_gif `
 
-max_resolution: The maximum resolution to download images at. The default is 3072, and must be a power of 2.
+max_resolution: The maximum resolution to download images at. The default is 3072.
 
 total_limit: The total amount of images to download. Default is 100, but can be changed at users discretion.
 

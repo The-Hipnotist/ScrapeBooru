@@ -1,15 +1,18 @@
-import json, os, time, requests, shutil
+import json, os, time, requests, shutil, requests, threading
 from tkinter import (
     Tk,
-    ttk,
     Label,
     Entry,
     Button,
     IntVar,
     Checkbutton,
     StringVar,
-    messagebox as mb
+    messagebox as mb,
+    Toplevel,
+    Text,
+    Scrollbar
 )
+from tkinter import ttk
 
 def get_json(url, headers):
     response = requests.get(url, headers=headers)
@@ -21,7 +24,7 @@ def filter_images(data, max_resolution, include_posts_with_parent):
     posts = data.get("post", [])
 
     if not posts:
-        mb.showinfo("Info", "No images found for the provided tags.")
+        pass
         return []
     return [p["file_url"] if p["width"]*p["height"] <= max_resolution**2 else p["sample_url"] for p in posts if (p["parent_id"] == 0 or include_posts_with_parent) and p["file_url"].lower().endswith(supported_types)]
 
@@ -44,7 +47,7 @@ def update_progress_bar(progress_bar, progress, total):
     progress_bar["value"] = (progress / total) * 100
     root.update_idletasks()
 
-def download_images():
+def download_images_thread():
     tags = tags_var.get().replace(" ", "+").replace("(", "%28").replace(")", "%29").replace(":", "%3a").replace("&", "%26")
     max_resolution = int(max_resolution_var.get())
     total_limit = int(total_limit_var.get())
@@ -81,9 +84,9 @@ def download_images():
 
         progress_bar["maximum"] = len(image_urls)
         for idx, img_url in enumerate(image_urls):
-            download_image(img_url, images_folder, max_retries)
-            update_progress_bar(progress_bar, idx + 1, len(image_urls))
-
+            if download_image(img_url, images_folder, max_retries):
+                update_progress_bar(progress_bar, idx + 1, len(image_urls))
+        
         progress_bar["value"] = 0
         root.update_idletasks()
 
@@ -92,54 +95,90 @@ def download_images():
         if not suppress_errors_var.get():
             mb.showerror("Error", str(e))
 
+def download_images():
+    threading.Thread(target=download_images_thread).start()
+
 def toggle_advanced_options():
-    if advaned_options_var.get():
-        show_debug_messages_cb.grid(row=7, columnspan=2, padx=10, pady=2)
-        retry_download_cb.grid(row=8, columnspan=2, padx=10, pady=2)
-        retries_label.grid(row=9, column=0, padx=10, pady=2)
-        retries_entry.grid(row=9, column=1, padx=10, pady=2)
-        suppress_errors_cb.grid(row=10, columnspan=2, padx=10, pady=2)
+    if advanced_options_var.get():
+        advanced_frame.grid(row=8, columnspan=2, padx=10, pady=5, sticky="ew")
     else:
-        show_debug_messages_cb.grid_remove()
-        retry_download_cb.grid_remove()
-        retries_label.grid_remove()
-        retries_entry.grid_remove()
-        suppress_errors_cb.grid_remove()
+        advanced_frame.grid_remove()
+
+def show_changelog():
+    changelog_window = Toplevel(root)
+    changelog_window.title("Changelog")
+    changelog_window.geometry("512x512")
+
+    changelog_text = Text(changelog_window, wrap='word')
+    changelog_text.pack(expand=True, fill='both')
+
+    changelog_scrollbar = Scrollbar(changelog_text)
+    changelog_scrollbar.pack(side='right', fill='y')
+    changelog_text.config(yscrollcommand=changelog_scrollbar.set)
+    changelog_scrollbar.config(command=changelog_text.yview)
+
+    changelog_content = """
+    Version 1.0.0:
+    - Initial release.
+    
+    Version 1.1.0:
+    - Added progress bar to show progress.
+    - Added advanced options for debugging and error suppression.
+    
+    Version 1.2.0:
+    - Improved UI.
+    - Fixed bug that would cause tkinter to not respond while downloading the images.
+    
+    Version 1.3.0:
+    - Fixed bug that would pop up a window saying 'No posts found with tag', but then would download the image anyway.
+    """
+    changelog_text.insert("1.0", changelog_content)
+    changelog_text.config(state='disabled')
 
 root = Tk()
 root.title("Scrapebooru")
 root.resizable(False, False)
 
-Label(root, text="Tags:").grid(row=0, column=0, padx=10, pady=10)
+main_frame = ttk.Frame(root)
+main_frame.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
+
+Label(main_frame, text="Tags:").grid(row=0, column=0, padx=10, pady=5, sticky="e")
 tags_var = StringVar()
-Entry(root, textvariable=tags_var).grid(row=0, column=1, padx=10, pady=10)
+Entry(main_frame, textvariable=tags_var).grid(row=0, column=1, padx=10, pady=5)
 
-Label(root, text="Max Resolution:").grid(row=1, column=0, padx=10, pady=10)
+Label(main_frame, text="Max Resolution:").grid(row=1, column=0, padx=10, pady=5, sticky="e")
 max_resolution_var = StringVar(value="3072")
-Entry(root, textvariable=max_resolution_var).grid(row=1, column=1, padx=10, pady=10)
+Entry(main_frame, textvariable=max_resolution_var).grid(row=1, column=1, padx=10, pady=5)
 
-Label(root, text="Total Limit:").grid(row=2, column=0, padx=10, pady=10)
+Label(main_frame, text="Total Limit:").grid(row=2, column=0, padx=10, pady=5, sticky="e")
 total_limit_var = StringVar(value="100")
-Entry(root, textvariable=total_limit_var).grid(row=2, column=1, padx=10, pady=10)
+Entry(main_frame, textvariable=total_limit_var).grid(row=2, column=1, padx=10, pady=5)
 
 include_posts_with_parent_var = IntVar(value=1)
-Checkbutton(root, text="Include posts with parent", variable=include_posts_with_parent_var).grid(row=3, columnspan=2, padx=10, pady=10)
+Checkbutton(main_frame, text="Include posts with parent", variable=include_posts_with_parent_var).grid(row=3, columnspan=2, padx=10, pady=5)
 
-Button(root, text="Download Images", command=download_images).grid(row=4, columnspan=2, padx=10, pady=10)
+Button(main_frame, text="Download Images", command=download_images).grid(row=4, column=0, padx=10, pady=10)
+Button(main_frame, text="Changelog", command=show_changelog).grid(row=4, column=1, padx=10, pady=10, sticky="w")
 
-progress_bar = ttk.Progressbar(root, orient="horizontal", length=300, mode="determinate")
-progress_bar.grid(row=5, columnspan=2, padx=10, pady=10)
+progress_bar = ttk.Progressbar(main_frame, orient="horizontal", length=300, mode="determinate")
+progress_bar.grid(row=5, columnspan=2, padx=10, pady=5)
 
-advaned_options_var = IntVar()
-Checkbutton(root, text="Show Advanced Options", variable=advaned_options_var, command=toggle_advanced_options).grid(row=6, columnspan=2, padx=10, pady=0)
+advanced_options_var = IntVar()
+Checkbutton(main_frame, text="Show advanced options", variable=advanced_options_var, command=toggle_advanced_options).grid(row=6, columnspan=2, padx=10, pady=10)
 
+advanced_frame = ttk.Frame(root)
 show_debug_messages_var = IntVar()
-show_debug_messages_cb = Checkbutton(root, text="Show debug messages in console", variable=show_debug_messages_var)
+Checkbutton(advanced_frame, text="Show debug messages in console", variable=show_debug_messages_var).grid(row=0, columnspan=2, padx=10, pady=2)
+
 retry_download_var = IntVar()
-retry_download_cb = Checkbutton(root, text="Retry download if failed.", variable=retry_download_var, command=lambda: retries_entry.config(state="normal" if retry_download_var.get() else "disabled"))
+Checkbutton(advanced_frame, text="Retry download if failed", variable=retry_download_var, command=lambda: retries_entry.config(state="normal" if retry_download_var.get() else "disabled")).grid(row=1, columnspan=2, padx=10, pady=2)
+
 retries_var = StringVar(value="1")
-retries_label = Label(root, text="Max Retries:")
-retries_entry = Entry(root, textvariable=retries_var, state="disabled")
+Label(advanced_frame, text="Max Retries:").grid(row=2, column=0, padx=10, pady=2, sticky="e")
+retries_entry = Entry(advanced_frame, textvariable=retries_var, state="disabled")
+retries_entry.grid(row=2, column=1, padx=10, pady=2, sticky="w")
+
 suppress_errors_var = IntVar()
-suppress_errors_cb = Checkbutton(root, text="Attempt to suppress errors?", variable=suppress_errors_var)
+Checkbutton(advanced_frame, text="Attempt to suppress errors (DEPRECATED)", variable=suppress_errors_var).grid(row=3, columnspan=2, padx=10, pady=2)
+
 root.mainloop()

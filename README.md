@@ -5,6 +5,7 @@ ScrapeBooru is a GUI program that gets images from Gelbooru using supplied tags.
 ## Checklist:
 - [x] Fix 'post' JSON bug, or suppress it. (Fixed with new version.)
 - [x] Adjust layout or add stuff in general.
+- [ ] Fix progress bar not being 100% accurate.
 
 ## Args:
 

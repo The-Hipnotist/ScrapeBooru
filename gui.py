@@ -38,8 +38,7 @@ def download_image(url, folder, max_retries):
             return True
         except Exception as e:
             if attempt == max_retries:
-                if not suppress_errors_var.get():
-                    mb.showerror("Error", f"Failed to download {url}: {str(e)}")
+                mb.showerror("Error", f"Failed to download {url}: {str(e)}")
                 return False
             time.sleep(1)
 
@@ -53,7 +52,6 @@ def download_images_thread():
     total_limit = int(total_limit_var.get())
     include_posts_with_parent = include_posts_with_parent_var.get()
     accurate_total_limit = accurate_total_limit_var.get()
-
 
     url = "https://gelbooru.com/index.php?page=dapi&json=1&s=post&q=index&limit=100&tags={}".format(tags)
     user_agent = "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Googlebot/2.1; +http://www.google.com/bot.html) Chrome/93.0.4577.83 Safari/537.36"
@@ -101,8 +99,7 @@ def download_images_thread():
 
         mb.showinfo("Success", f"Downloaded {len(image_urls)} images!")
     except Exception as e:
-        if not suppress_errors_var.get():
-            mb.showerror("Error", str(e))
+        mb.showerror("Error", str(e))
 
 def download_images():
     threading.Thread(target=download_images_thread).start()
@@ -112,12 +109,6 @@ def toggle_advanced_options():
         advanced_frame.grid(row=8, columnspan=2, padx=10, pady=5, sticky="ew")
     else:
         advanced_frame.grid_remove()
-
-def toggle_deprecated_options():
-    if deprecated_options_var.get():
-        suppress_errors_cb.grid(row=6, columnspan=2, padx=10, pady=2)
-    else:
-        suppress_errors_cb.grid_remove()
 
 def show_changelog():
     changelog_window = Toplevel(root)
@@ -138,13 +129,16 @@ def show_changelog():
     - Fixed bug that would cause tkinter to not respond while downloading the images.
     
     Version 1.3.0:
-    - Fixed bug that would pop up a window saying 'No posts found with tag', but then would download the image anyway.
+    - Fixed bug that would pop up a window saying 'No posts found with tag', but then would download the images anyway.
     
     Version 1.3.5:
     - Added "Suppress errors" to deprecated options.
 
     Version 1.4.0:
     - Added new advanced options.
+
+    Version 1.4.5:
+    - Removed experimental option as it did not work most of the time.
     """
     changelog_text.insert("1.0", changelog_content)
     changelog_text.config(state='disabled')
@@ -174,7 +168,7 @@ Checkbutton(main_frame, text="Include posts with parent", variable=include_posts
 Button(main_frame, text="Download Images", command=download_images).grid(row=4, column=0, padx=10, pady=10)
 Button(main_frame, text="Changelog", command=show_changelog).grid(row=4, column=1, padx=10, pady=10, sticky="w")
 
-progress_bar = ttk.Progressbar(main_frame, orient="horizontal", length=350, mode="determinate")
+progress_bar = ttk.Progressbar(main_frame, orient="horizontal", length=300, mode="determinate")
 progress_bar.grid(row=5, columnspan=2, padx=10, pady=5)
 
 advanced_options_var = IntVar()
@@ -192,18 +186,7 @@ Label(advanced_frame, text="Max Retries:").grid(row=2, column=0, padx=10, pady=2
 retries_entry = Entry(advanced_frame, textvariable=retries_var, state="disabled")
 retries_entry.grid(row=2, column=1, padx=10, pady=2, sticky="w")
 
-accurate_progress_bar_var = IntVar()
-Checkbutton(advanced_frame, text="Make progress bar more accurate (EXPERIMENTAL)", variable=accurate_progress_bar_var).grid(row=3, columnspan=2, padx=10, pady=2)
-
 accurate_total_limit_var = IntVar()
 Checkbutton(advanced_frame, text="Ensure total limit is accurate", variable=accurate_total_limit_var).grid(row=4, columnspan=2, padx=10, pady=2)
-
-deprecated_options_var = IntVar()
-Checkbutton(advanced_frame, text="Show deprecated options", variable=deprecated_options_var, command=toggle_deprecated_options).grid(row=5, columnspan=2, padx=10, pady=2)
-
-
-suppress_errors_var = IntVar()
-suppress_errors_cb = Checkbutton(advanced_frame, text="Attempt to suppress errors (DEPRECATED)", variable=suppress_errors_var)
-suppress_errors_cb.grid_remove()
 
 root.mainloop()

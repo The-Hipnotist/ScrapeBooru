@@ -1,4 +1,4 @@
-import json, os, time, requests, shutil, requests, threading, itertools, sys
+import json, os, time, requests, shutil, threading
 from tkinter import (
     Tk,
     Label,
@@ -24,7 +24,6 @@ def filter_images(data, max_resolution, include_posts_with_parent):
     posts = data.get("post", [])
 
     if not posts:
-        pass
         return []
     return [p["file_url"] if p["width"]*p["height"] <= max_resolution**2 else p["sample_url"] for p in posts if (p["parent_id"] == 0 or include_posts_with_parent) and p["file_url"].lower().endswith(supported_types)]
 
@@ -52,7 +51,6 @@ def download_images_thread():
     total_limit = int(total_limit_var.get())
     include_posts_with_parent = include_posts_with_parent_var.get()
     accurate_total_limit = accurate_total_limit_var.get()
-
     url = "https://gelbooru.com/index.php?page=dapi&json=1&s=post&q=index&limit=100&tags={}".format(tags)
     user_agent = "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Googlebot/2.1; +http://www.google.com/bot.html) Chrome/93.0.4577.83 Safari/537.36"
     headers = {"User-Agent": user_agent}
@@ -104,12 +102,6 @@ def download_images_thread():
 def download_images():
     threading.Thread(target=download_images_thread).start()
 
-def toggle_advanced_options():
-    if advanced_options_var.get():
-        advanced_frame.grid(row=8, columnspan=2, padx=10, pady=5, sticky="ew")
-    else:
-        advanced_frame.grid_remove()
-
 def show_changelog():
     changelog_window = Toplevel(root)
     changelog_window.title("Changelog")
@@ -124,21 +116,15 @@ def show_changelog():
     changelog_scrollbar.config(command=changelog_text.yview)
 
     changelog_content = """
-    Version 1.2.0:
-    - Improved UI.
-    - Fixed bug that would cause tkinter to not respond while downloading the images.
-    
-    Version 1.3.0:
-    - Fixed bug that would pop up a window saying 'No posts found with tag', but then would download the images anyway.
-    
-    Version 1.3.5:
-    - Added "Suppress errors" to deprecated options.
-
     Version 1.4.0:
     - Added new advanced options.
 
     Version 1.4.5:
     - Removed experimental option as it did not work most of the time.
+
+    Version 1.5.0:
+    - Removed advanced settings checkbox and stuck them on the main interface.
+    - Cleaned up UI a bit to comply with the changes.
     """
     changelog_text.insert("1.0", changelog_content)
     changelog_text.config(state='disabled')
@@ -165,28 +151,24 @@ Entry(main_frame, textvariable=total_limit_var).grid(row=2, column=1, padx=10, p
 include_posts_with_parent_var = IntVar(value=1)
 Checkbutton(main_frame, text="Include posts with parent", variable=include_posts_with_parent_var).grid(row=3, columnspan=2, padx=10, pady=5)
 
-Button(main_frame, text="Download Images", command=download_images).grid(row=4, column=0, padx=10, pady=10)
-Button(main_frame, text="Changelog", command=show_changelog).grid(row=4, column=1, padx=10, pady=10, sticky="w")
-
-progress_bar = ttk.Progressbar(main_frame, orient="horizontal", length=300, mode="determinate")
-progress_bar.grid(row=5, columnspan=2, padx=10, pady=5)
-
-advanced_options_var = IntVar()
-Checkbutton(main_frame, text="Show advanced options", variable=advanced_options_var, command=toggle_advanced_options).grid(row=6, columnspan=2, padx=10, pady=10)
-
-advanced_frame = ttk.Frame(root)
 show_debug_messages_var = IntVar()
-Checkbutton(advanced_frame, text="Show debug messages in console", variable=show_debug_messages_var).grid(row=0, columnspan=2, padx=10, pady=2)
+Checkbutton(main_frame, text="Show debug messages in console", variable=show_debug_messages_var).grid(row=4, columnspan=2, padx=10, pady=2)
 
 retry_download_var = IntVar()
-Checkbutton(advanced_frame, text="Retry download if failed", variable=retry_download_var, command=lambda: retries_entry.config(state="normal" if retry_download_var.get() else "disabled")).grid(row=1, columnspan=2, padx=10, pady=2)
+Checkbutton(main_frame, text="Retry download if failed", variable=retry_download_var, command=lambda: retries_entry.config(state="normal" if retry_download_var.get() else "disabled")).grid(row=5, columnspan=2, padx=10, pady=2)
 
 retries_var = StringVar(value="1")
-Label(advanced_frame, text="Max Retries:").grid(row=2, column=0, padx=10, pady=2, sticky="e")
-retries_entry = Entry(advanced_frame, textvariable=retries_var, state="disabled")
-retries_entry.grid(row=2, column=1, padx=10, pady=2, sticky="w")
+Label(main_frame, text="Max Retries:").grid(row=6, column=0, padx=10, pady=2, sticky="e")
+retries_entry = Entry(main_frame, textvariable=retries_var, state="disabled")
+retries_entry.grid(row=6, column=1, padx=10, pady=2, sticky="w")
 
 accurate_total_limit_var = IntVar()
-Checkbutton(advanced_frame, text="Ensure total limit is accurate", variable=accurate_total_limit_var).grid(row=4, columnspan=2, padx=10, pady=2)
+Checkbutton(main_frame, text="Ensure total limit is accurate", variable=accurate_total_limit_var).grid(row=7, columnspan=2, padx=10, pady=2)
+
+Button(main_frame, text="Download Images", command=download_images).grid(row=8, column=0, padx=10, pady=10)
+Button(main_frame, text="Changelog", command=show_changelog).grid(row=8, column=1, padx=10, pady=10, sticky="w")
+
+progress_bar = ttk.Progressbar(main_frame, orient="horizontal", length=300, mode="determinate")
+progress_bar.grid(row=9, columnspan=2, padx=10, pady=5)
 
 root.mainloop()
